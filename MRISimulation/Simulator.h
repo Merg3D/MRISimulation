@@ -3,18 +3,19 @@
 #include <vector>
 
 #include "Vec3.h"
+#include "Utility.h"
 
-struct Particle
+struct Spatial
 {
 	vec3 position;
 };
 
-struct SPIO : public Particle
+struct Particle : public Spatial
 {
 
 };
 
-struct Proton : public Particle
+struct Proton : public Spatial
 {
 	Proton()
 	{
@@ -30,24 +31,34 @@ public:
 	Simulator();
 	~Simulator();
 
-	void iterate();
+	void start();
 
 	float get_signal();
 	float get_contrast();
 
 private:
+
+	void init();
+	void iterate();
+
 	// calculate global magnetization
 	void calculate_global_magnetization();
 
 	// assert periodic boundary conditions
-	void assert_in_space(Particle* p_particle);
+	void assert_in_space(Spatial* p_particle);
+	
+	// update position for next iteration
+	void update_position(Spatial* p_particle);
 
-	// update particle (position and magnetization) for next iteration
-	void update_particle(Particle* p_particle);
-	void update_particle_position(Particle* p_particle);
-	void update_particle_magnetization(Particle* p_particle);
+	// update particle
+	void update_particle(Particle& p_particle);
 
-	std::vector<Particle*> particles;
+	// update proton (position and magnetization)
+	void update_proton(Proton& p_particle);
+	void update_proton_magnetization(Proton& p_particle);
+	
+	std::vector<Proton> protons;
+	std::vector<Particle> particles;
 
 	vec3 space_size;
 
@@ -57,7 +68,22 @@ private:
 	float dt;
 
 	float R1, R2;
-	float T1;
+	float Mz;
+	float B_eq;
+	float T;
+	float r2;
+	float particle_radius;
+	float proton_radius;
+
+	bool running;
+
+	int t;
+	int max_iterations;
+
+	int N_protons;
+	int N_particles;
+
+	Random random;
 
 	vec3 global_magnetization;
 };
