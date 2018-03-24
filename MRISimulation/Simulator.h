@@ -17,11 +17,6 @@ struct Particle : public Spatial
 
 struct Proton : public Spatial
 {
-	Proton()
-	{
-		magnetization = vec3(0.0f, 0.0f, 1.0f);
-	}
-
 	vec3 magnetization;
 };
 
@@ -48,14 +43,17 @@ private:
 	void assert_in_space(Spatial* p_particle);
 	
 	// update position for next iteration
-	void update_position(Spatial* p_particle);
-
-	// update particle
-	void update_particle(Particle& p_particle);
-
+	void update_position(Spatial* p_spatial);
+	
 	// update proton (position and magnetization)
-	void update_proton(Proton& p_particle);
-	void update_proton_magnetization(Proton& p_particle);
+	void update_proton(Proton& p_proton);
+	void update_proton_magnetization(Proton& p_proton);
+
+	void apply_exc_pulse();
+	void apply_ors_pulse();
+
+	float B_tot(Proton& p_particle);
+	float B_dip(const vec3& p_r);
 	
 	std::vector<Proton> protons;
 	std::vector<Particle> particles;
@@ -68,20 +66,32 @@ private:
 	float dt;
 
 	float R1, R2;
-	float Mz;
+	float Ms;
+	float M0;
+	float B0;
 	float B_eq;
 	float T;
 	float r2;
+
 	float particle_radius;
-	float proton_radius;
+
+	float exc_pulse_flipangle; // degrees
+	float ors_pulse_flipangle; // degrees
 
 	bool running;
 
-	int t;
+	float t;
+	int iteration;
 	int max_iterations;
 
 	int N_protons;
 	int N_particles;
+
+	float ORS_offset;			// Hz
+	float ORS_bandwidth;		// Hz
+
+	// proton gyromagnetic ratio
+	float gamma;
 
 	Random random;
 

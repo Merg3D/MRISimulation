@@ -8,9 +8,7 @@ int main()
 	Simulator simulator;
 	simulator.start();
 
-	//std::cout << "";
-
-	//while (true) { }
+	std::cout << "Finished" << std::endl;
 
 	return 0;
 }
