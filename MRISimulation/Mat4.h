@@ -18,22 +18,22 @@ public:
 		m[2] = 0.0; m[6] = 0.0; m[10] = 1.0; m[14] = 0.0;
 		m[3] = 0.0; m[7] = 0.0; m[11] = 0.0; m[15] = 1.0;
 	}
-	mat4(float p_values[16])
+	mat4(double p_values[16])
 	{
 		for (int c = 0; c < 16; c++)
 			m[c] = p_values[c];
 	}
-	mat4(float m0, float m1, float m2, float m3,
-		float m4, float m5, float m6, float m7,
-		float m8, float m9, float m10, float m11,
-		float m12, float m13, float m14, float m15)
+	mat4(double m0, double m1, double m2, double m3,
+		double m4, double m5, double m6, double m7,
+		double m8, double m9, double m10, double m11,
+		double m12, double m13, double m14, double m15)
 	{
 		m[0] = m0; m[4] = m4; m[8] = m8;  m[12] = m12;
 		m[1] = m1; m[5] = m5; m[9] = m9;  m[13] = m13;
 		m[2] = m2; m[6] = m6; m[10] = m10; m[14] = m14;
 		m[3] = m3; m[7] = m7; m[11] = m11; m[15] = m15;
 	}
-	mat4(const vec4& p_c0, const vec4& p_c1, const vec4& p_c2, const vec4& p_c3)
+	mat4(const vec4d& p_c0, const vec4d& p_c1, const vec4d& p_c2, const vec4d& p_c3)
 	{
 		m[0] = p_c0.x; m[4] = p_c1.x; m[8] = p_c2.x;  m[12] = p_c3.x;
 		m[1] = p_c0.y; m[5] = p_c1.y; m[9] = p_c2.y;  m[13] = p_c3.y;
@@ -65,16 +65,16 @@ public:
 		l *= r;
 		return l;
 	}
-	vec4 operator*(const vec4 &r) const
+	vec4d operator*(const vec4d &r) const
 	{
-		vec4 result;
+		vec4d result;
 		result.x = m[0] * r.x + m[4] * r.y + m[8] * r.z + m[12] * r.w;
 		result.y = m[1] * r.x + m[5] * r.y + m[9] * r.z + m[13] * r.w;
 		result.z = m[2] * r.x + m[6] * r.y + m[10] * r.z + m[14] * r.w;
 		result.w = m[3] * r.x + m[7] * r.y + m[11] * r.z + m[15] * r.w;
 		return result;
 	}
-	mat4 operator*(const float &r) const
+	mat4 operator*(const double &r) const
 	{
 		mat4 l = *this;
 		l *= r;
@@ -103,7 +103,7 @@ public:
 
 		return *this;
 	}
-	mat4& operator*=(const float &r)
+	mat4& operator*=(const double &r)
 	{
 		m[0] *= r; m[4] *= r; m[8] *= r; m[12] *= r;
 		m[1] *= r; m[5] *= r; m[9] *= r; m[13] *= r;
@@ -142,7 +142,7 @@ public:
 	}
 
 	//Conversion
-	operator float*() { return m; }
+	operator double*() { return m; }
 	std::string ToString() const
 	{
 		std::string s = "{ ";
@@ -154,7 +154,7 @@ public:
 	}
 
 	//Info
-	float det() const
+	double det() const
 	{
 		return ((m[0] * m[5] * m[10]) +
 			(m[4] * m[9] * m[2]) +
@@ -176,74 +176,74 @@ public:
 	}
 
 	//Transformations
-	void translate(const vec3 &trans)
+	void translate(const vec3d &trans)
 	{
 		m[12] = trans.x;
 		m[13] = trans.y;
 		m[14] = trans.z;
 	}
 
-	void rotate(float x, float y, float z, float angle)
+	void rotate(double x, double y, double z, double angle)
 	{
-		rotate(vec3(x, y, z), angle);
+		rotate(vec3d(x, y, z), angle);
 	}
-	void rotate(const vec3 &axis, float angle)
+	void rotate(const vec3d &axis, double angle)
 	{
 		//Math::DegToRad(angle);
-		float c = cos(angle);
-		float s = sin(angle);
-		vec3 v = axis;
+		double c = cos(angle);
+		double s = sin(angle);
+		vec3d v = axis;
 		v.normalize();
-		/*float xx = v.x * v.x;
-		float yy = v.y * v.y;
-		float zz = v.z * v.z;
-		float xy = v.x * v.y;
-		float yz = v.y * v.z;
-		float zx = v.z * v.x;
-		float xs = v.x * s;
-		float ys = v.y * s;
-		float zs = v.z * s;
+		/*double xx = v.x * v.x;
+		double yy = v.y * v.y;
+		double zz = v.z * v.z;
+		double xy = v.x * v.y;
+		double yz = v.y * v.z;
+		double zx = v.z * v.x;
+		double xs = v.x * s;
+		double ys = v.y * s;
+		double zs = v.z * s;
 		m[0] = (1.0f - c) * xx + c;  m[4] = (1.0f - c) * xy - zs; m[8] = (1.0f - c) * zx + ys; m[12] = 0.0;
 		m[1] = (1.0f - c) * xy + zs; m[5] = (1.0f - c) * yy + c;  m[9] = (1.0f - c) * yz - xs; m[13] = 0.0;
 		m[2] = (1.0f - c) * zx - ys; m[6] = (1.0f - c) * yz + xs; m[10] = (1.0f - c) * zz + c; m[14] = 0.0;
 		m[3] = 0.0;                  m[7] = 0.0;                  m[11] = 0.0;                 m[15] = 1.0;*/
 
 	}
-	void rotate_x(float angle)
+	void rotate_x(double angle)
 	{
-		float c = cos(angle);
-		float s = sin(angle);
+		double c = cos(angle);
+		double s = sin(angle);
 		m[0] = 1.0; m[4] = 0.0; m[8] = 0.0; m[12] = 0.0;
 		m[1] = 0.0; m[5] = c;  m[9] = -s;  m[13] = 0.0;
 		m[2] = 0.0; m[6] = s;  m[10] = c;  m[14] = 0.0;
 		m[3] = 0.0; m[7] = 0.0; m[11] = 0.0; m[15] = 1.0;
 	}
-	void rotate_y(float angle)
+	void rotate_y(double angle)
 	{
-		float c = cos(angle);
-		float s = sin(angle);
+		double c = cos(angle);
+		double s = sin(angle);
 		m[0] = c;  m[4] = 0.0; m[8] = s;  m[12] = 0.0;
 		m[1] = 0.0; m[5] = 1.0; m[9] = 0.0; m[13] = 0.0;
 		m[2] = -s;  m[6] = 0.0; m[10] = c;  m[14] = 0.0;
 		m[3] = 0.0; m[7] = 0.0; m[11] = 0.0; m[15] = 1.0;
 	}
-	void rotate_z(float angle)
+	void rotate_z(double angle)
 	{
-		float c = cos(angle);
-		float s = sin(angle);
+		double c = cos(angle);
+		double s = sin(angle);
 		m[0] = c;	m[4] = -s;	m[8] = 0.0; m[12] = 0.0;
 		m[1] = s;	m[5] = c;	m[9] = 0.0; m[13] = 0.0;
 		m[2] = 0.0; m[6] = 0.0; m[10] = 1.0; m[14] = 0.0;
 		m[3] = 0.0; m[7] = 0.0; m[11] = 0.0; m[15] = 1.0;
 	}
-	void scale(float x, float y, float z)
+	void scale(double x, double y, double z)
 	{
 		m[0] = x;   m[4] = 0.0; m[8] = 0.0; m[12] = 0.0;
 		m[1] = 0.0; m[5] = y;   m[9] = 0.0; m[13] = 0.0;
 		m[2] = 0.0; m[6] = 0.0; m[10] = z;   m[14] = 0.0;
 		m[3] = 0.0; m[7] = 0.0; m[11] = 0.0; m[15] = 1.0;
 	}
-	void scale(const vec3 &v)
+	void scale(const vec3d &v)
 	{
 		m[0] = v.x; m[4] = 0.0; m[8] = 0.0;  m[12] = 0.0;
 		m[1] = 0.0; m[5] = v.y; m[9] = 0.0;  m[13] = 0.0;
@@ -252,7 +252,7 @@ public:
 	}
 	mat4 inverse() const
 	{
-		float inv[16], det;
+		double inv[16], det;
 		int i;
 
 		inv[0] = m[5] * m[10] * m[15] -
@@ -373,7 +373,7 @@ public:
 			return mat4();
 
 		det = 1.0f / det;
-		float invOut[16];
+		double invOut[16];
 
 		for (i = 0; i < 16; i++)
 			invOut[i] = inv[i] * det;
@@ -382,22 +382,22 @@ public:
 	}
 
 	//view matrices
-	void look_at(const vec3& p_eye, const vec3& p_target, const vec3& p_up);
+	void look_at(const vec3d& p_eye, const vec3d& p_target, const vec3d& p_up);
 
 	//Static Contructors
-	static mat4 Scale(const vec3 &v)
+	static mat4 Scale(const vec3d &v)
 	{
 		mat4 result;
 		result.scale(v);
 		return result;
 	}
-	static mat4 Translate(const vec3 &v)
+	static mat4 Translate(const vec3d &v)
 	{
 		mat4 result;
 		result.translate(v);
 		return result;
 	}
-	static mat4 Rotate(const vec3 &v)
+	static mat4 Rotate(const vec3d &v)
 	{
 		mat4 result;
 		//result.rotate(v);
@@ -405,5 +405,5 @@ public:
 	}
 
 	//Data
-	float m[16];
+	double m[16];
 };

@@ -7,7 +7,7 @@
 
 struct Spatial
 {
-	vec3 position;
+	vec3d position;
 };
 
 struct Particle : public Spatial
@@ -17,7 +17,7 @@ struct Particle : public Spatial
 
 struct Proton : public Spatial
 {
-	vec3 magnetization;
+	vec3d magnetization;
 };
 
 class Simulator
@@ -28,8 +28,8 @@ public:
 
 	void start();
 
-	float get_signal();
-	float get_contrast();
+	double get_signal();
+	double get_contrast();
 
 private:
 
@@ -49,52 +49,61 @@ private:
 	void update_proton(Proton& p_proton);
 	void update_proton_magnetization(Proton& p_proton);
 
+	// apply excitation and off-resonance pulses
 	void apply_exc_pulse();
 	void apply_ors_pulse();
 
-	float B_tot(Proton& p_particle);
-	float B_dip(const vec3& p_r);
+	// calculate total magnetic field
+	double B_tot(Proton& p_particle);
+
+	// calculate dipole field for SPIO particle given distance to proton 
+	double B_dip(const vec3d& p_r);
+
+	void output();
 	
 	std::vector<Proton> protons;
 	std::vector<Particle> particles;
 
-	vec3 space_size;
+	// results
+	std::vector<double> signals;
+	std::vector<double> offsets;
 
-	float D;
-	float step_size;
-	float normal_dt;
-	float dt;
+	vec3d space_size;
 
-	float R1, R2;
-	float Ms;
-	float M0;
-	float B0;
-	float B_eq;
-	float T;
-	float r2;
+	double D;
+	double step_size;
+	double normal_dt;
+	double dt;
 
-	float particle_radius;
+	double R1, R2;
+	double Ms;
+	double M0;
+	double B0;
+	double B_eq;
+	double T;					// temperature
 
-	float exc_pulse_flipangle; // degrees
-	float ors_pulse_flipangle; // degrees
+	double particle_radius;
+
+	double exc_pulse_flipangle; // degrees
+	double ors_pulse_flipangle; // degrees
 
 	bool running;
 
-	float t;
+	double t;
 	int iteration;
 	int max_iterations;
 
 	int N_protons;
 	int N_particles;
 
-	float ORS_offset;			// Hz
-	float ORS_bandwidth;		// Hz
+	double ORS_frequency;		// Hz
+	double ORS_bandwidth;		// Hz
 
 	// proton gyromagnetic ratio
-	float gamma;
+	double gamma;
 
 	Random random;
 
-	vec3 global_magnetization;
+	vec3d global_magnetization;
 };
 

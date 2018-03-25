@@ -1,10 +1,12 @@
 #pragma once
 
 #include <random>
+#include <time.h>
+
 #include "Vec3.h"
 
 #define PI 3.14159265359f
-#define DEG_RAD (PI / 180.0f)
+#define DEG_RAD (PI / 180.0)
 
 class Utility
 {
@@ -18,22 +20,23 @@ class Random
 public:
 	Random()
 	{
-
+		/* initialize random seed: */
+		srand(time(NULL));
 	}
-	float get_random()
+	double get_random()
 	{
-		return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+		return static_cast<double>(std::rand()) / static_cast<double>(RAND_MAX);
 	}
-	vec3 get_random_vec3()
+	vec3d get_random_vec3()
 	{
-		float theta = get_random() * PI * 2.0f;
-		float phi = get_random() * PI * 2.0f;
+		double theta = get_random() * PI * 2.0;
+		double phi = get_random() * PI * 2.0;
 
-		float x = std::sin(theta) * std::cos(phi);
-		float y = std::sin(theta) * std::sin(phi);
-		float z = std::cos(theta);
+		double x = std::sin(theta) * std::cos(phi);
+		double y = std::sin(theta) * std::sin(phi);
+		double z = std::cos(theta);
 
-		return vec3(x, y, z);
+		return vec3d(x, y, z);
 	}
 };
 
