@@ -12,7 +12,7 @@ Simulator::Simulator()
 	double Cc = 1.0e-3;						// M
 
 	N_protons = 5e5;
-	N_particles = 1e2;
+	N_particles = 1.5e2;
 
 	D = 3.0e-9;							// m^2 s^-1
 
@@ -22,15 +22,15 @@ Simulator::Simulator()
 	R1 = 1.0 / T1;							// Hz
 	R2 = 1.0 / T2;							// Hz
 
-	Ms = 100.0;							// Am^2 / kg [Fe]
+	Ms = 100.0;								// Am^2 / kg [Fe]
 	M0 = 1.0;
 
 	double mu_0 = 4e-7 * PI;
-	B_eq = 0.72 * 5185 * mu_0 / 3.0 * Ms; // Tesla (0.156)
+	B_eq = 0.72 * 5185 * mu_0 / 3.0 * Ms;	// Tesla (0.156)
 
 	T = 310.0;								// K
 
-	particle_radius = 20e-9;				// m
+	particle_radius = 10e-9;				// m
 
 	gamma = 267.513e6;						// rad s^−1 T^−1)
 
@@ -59,9 +59,9 @@ Simulator::~Simulator()
 void Simulator::start()
 {
 	init();
-	apply_exc_pulse();
 
 	apply_ors_pulse();
+	apply_exc_pulse();
 
 	running = true;
 
