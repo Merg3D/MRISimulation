@@ -48,8 +48,8 @@ private:
 	// update proton (position and magnetization)
 	void update_proton(Proton& p_proton);
 	void update_proton_magnetization(Proton& p_proton);
-
-	// apply excitation and off-resonance pulses
+	
+	// apply excitation and off-resonance pulses along x-axis
 	void apply_exc_pulse();
 	void apply_ors_pulse();
 
@@ -79,6 +79,7 @@ private:
 	double Ms;
 	double M0;
 	double B0;
+	double B1;
 	double B_eq;
 	double T;					// temperature
 
@@ -88,6 +89,7 @@ private:
 	double ors_pulse_flipangle; // degrees
 
 	bool running;
+	bool applying_gradient;
 
 	double t;
 	int iteration;
@@ -96,8 +98,13 @@ private:
 	int N_protons;
 	int N_particles;
 
-	double ORS_frequency;		// Hz
-	double ORS_bandwidth;		// Hz
+	double ors_frequency;		// Hz
+	double ors_bandwidth;		// Hz
+
+	double exc_pulse_time;
+	double gradient_duration;
+
+	bool has_applied_exc_pulse;
 
 	// proton gyromagnetic ratio
 	double gamma;

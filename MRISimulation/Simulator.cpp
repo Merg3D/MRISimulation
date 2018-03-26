@@ -7,14 +7,14 @@
 
 Simulator::Simulator()
 {
-	max_iterations = 20;
+	max_iterations = 1e2;
 
 	double Cc = 1.0e-3;						// M
 
-	N_protons = 5e5;
+	N_protons = 1e4;
 	N_particles = 1.5e2;
 
-	D = 3.0e-9;							// m^2 s^-1
+	D = 3.0e-9;								// m^2 s^-1
 
 	double T1 = 3.0;						// s
 	double T2 = 80.0e-3;					// s
@@ -37,17 +37,20 @@ Simulator::Simulator()
 	normal_dt = pow(particle_radius, 2) / (6 * D);	// s
 	dt = normal_dt;							// s
 
-	exc_pulse_flipangle = 10.0;			// degrees
-	ors_pulse_flipangle = 90.0;			// degrees
+	exc_pulse_flipangle = 10.0;				// degrees
+	ors_pulse_flipangle = 90.0;				// degrees
 
-	dt = 0.1;
+	dt = 1e-4;
 
 	space_size = vec3d(1.5e-5);				// m
 
 	B0 = 7.0;								// T
+	B1 = 10.0;								// Tesla
 
-	ORS_frequency = 0.0;
-	ORS_bandwidth = 5000.0;
+	ors_frequency = 0.0;
+	ors_bandwidth = 50.0;
+	gradient_duration = 2e-3;
+	exc_pulse_time = 0.5;
 }
 
 Simulator::~Simulator()
@@ -61,8 +64,8 @@ void Simulator::start()
 	init();
 
 	apply_ors_pulse();
-	apply_exc_pulse();
 
+	applying_gradient = true;
 	running = true;
 
 	while (running)
@@ -73,15 +76,18 @@ void Simulator::start()
 			break;
 		}
 
-		double signal = get_signal();
-		signals.push_back(signal);
-		std::cout << "Iteration: " << iteration << ", time: " << t << ", signal = " << signal << std::endl;
+		if (t > gradient_duration)
+			applying_gradient = false;
 
+		get_signal();
 		iterate();
 
 		t += dt;
 		iteration++;
 	}
+
+	//apply_exc_pulse();
+	//get_signal();
 
 	output();
 }
@@ -105,7 +111,7 @@ void Simulator::init()
 
 void Simulator::iterate()
 {
-	step_size = std::sqrt(6 * D * dt);
+	step_size = sqrt(6 * D * dt);
 
 	for (int c = 0; c < N_protons; c++)
 	{
@@ -120,7 +126,12 @@ double Simulator::get_signal()
 {
 	calculate_global_magnetization();
 	vec3d M = global_magnetization;
-	return std::sqrt(M.x * M.x + M.y * M.y);
+	double signal = sqrt(M.x * M.x + M.y * M.y);
+
+	signals.push_back(signal);
+	std::cout << "Iteration: " << iteration << ", time: " << t << ", signal = " << signal << std::endl;
+
+	return signal;
 }
 
 double Simulator::get_contrast()
@@ -171,18 +182,26 @@ void Simulator::update_proton_magnetization(Proton& p_proton)
 {
 	vec3d& magn = p_proton.magnetization;
 
-	double B_t = B_tot(p_proton);
-	double theta = gamma * B_t * dt;
-	double E1 = std::exp(-R1 * dt);
-	double E2 = std::exp(-R2 * dt);
+	double Bt = B_tot(p_proton);
 
-	magn.x = E1 * (magn.x * cos(theta) + magn.y * sin(theta));
-	magn.y = E1 * (magn.x * sin(theta) - magn.y * cos(theta));
-	magn.z = E2 * magn.z + (1.0 - std::exp(-dt * R1)) * M0;
+	double offset = gamma * Bt - gamma * B0; // relative larmor frequency
+	double theta = gamma * Bt * dt;
+
+	if (applying_gradient)
+		theta += offset * B1 * dt;
+
+	double E1 = exp(-R1 * dt);
+	double E2 = exp(-R2 * dt);
+
+	magn.x = E2 * (magn.x * cos(theta) + magn.y * sin(theta));
+	magn.y = E2 * (magn.x * sin(theta) - magn.y * cos(theta));
+	magn.z = E1 * magn.z + (1.0 - E1) * M0;
 }
 
 void Simulator::apply_exc_pulse()
 {
+	std::cout << "Applying ORS pulse" << std::endl;
+
 	mat4 rot;
 	rot.rotate_x(exc_pulse_flipangle * DEG_RAD);
 
@@ -206,7 +225,7 @@ void Simulator::apply_ors_pulse()
 		double B_t = B_tot(protons[c]);
 		double offset = gamma * B_t - gamma * B0; // relative larmor frequency
 
-		if (offset > ORS_frequency - ORS_bandwidth / 2.0 && offset < ORS_frequency + ORS_bandwidth / 2.0)
+		if (offset > ors_frequency - ors_bandwidth / 2.0 && offset < ors_frequency + ors_bandwidth / 2.0)
 		{
 			protons[c].magnetization = (rot * vec4d(protons[c].magnetization, 1.0)).get_xyz();
 			count++;
