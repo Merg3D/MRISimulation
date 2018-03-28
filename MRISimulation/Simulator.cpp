@@ -45,11 +45,11 @@ Simulator::Simulator()
 	space_size = vec3d(1.5e-5);				// m
 
 	B0 = 7.0;								// T
-	B1 = 10.0;								// Tesla
+	B1 = 1000.0;								// Tesla
 
 	ors_frequency = 0.0;
-	ors_bandwidth = 50.0;
-	gradient_duration = 2e-3;
+	ors_bandwidth = 500000.0;
+	gradient_duration = 20e-3;
 	exc_pulse_time = 0.5;
 }
 
@@ -188,13 +188,13 @@ void Simulator::update_proton_magnetization(Proton& p_proton)
 	double theta = gamma * Bt * dt;
 
 	if (applying_gradient)
-		theta += offset * B1 * dt;
+		theta += offset * B1 * t;
 
 	double E1 = exp(-R1 * dt);
 	double E2 = exp(-R2 * dt);
 
-	magn.x = E2 * (magn.x * cos(theta) + magn.y * sin(theta));
-	magn.y = E2 * (magn.x * sin(theta) - magn.y * cos(theta));
+	magn.x = (magn.x * cos(theta) + magn.y * sin(theta));
+	magn.y = (magn.x * sin(theta) - magn.y * cos(theta));
 	magn.z = E1 * magn.z + (1.0 - E1) * M0;
 }
 
