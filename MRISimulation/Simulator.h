@@ -20,6 +20,23 @@ struct Proton : public Spatial
 	vec3d magnetization;
 };
 
+struct Experiment
+{
+	double dt = 1e-8;
+
+	int max_iterations = 1e8;
+
+	int N_protons = 1e6;
+	int N_particles = 1e2;
+
+	double ors_frequency = 100.0;
+	double ors_bandwidth = 300.0;
+
+	vec3d volume = vec3d(1.5e-5);
+
+	int id = -1;
+};
+
 class Simulator
 {
 public:
@@ -28,6 +45,8 @@ public:
 
 	void start();
 
+	void start_experiment(const Experiment& p_exp);
+
 	double get_signal();
 	double get_contrast();
 
@@ -35,6 +54,8 @@ private:
 
 	void init();
 	void iterate();
+
+	double get_z_magnetization();
 
 	// calculate global magnetization
 	void calculate_global_magnetization();
@@ -68,7 +89,12 @@ private:
 	std::vector<double> signals;
 	std::vector<double> offsets;
 
-	vec3d space_size;
+	// experiments
+	std::vector<Experiment> experiments;
+
+	int current_exp;
+
+	vec3d volume;
 
 	double D;
 	double step_size;

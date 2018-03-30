@@ -40,17 +40,39 @@ Simulator::Simulator()
 	exc_pulse_flipangle = 10.0;				// degrees
 	ors_pulse_flipangle = 90.0;				// degrees
 
-	dt = 1e-4;
+	dt = 1e-2;								// s
 
-	space_size = vec3d(1.5e-5);				// m
+	volume = vec3d(1.5e-5);				// m
 
 	B0 = 7.0;								// T
-	B1 = 1000.0;								// Tesla
+	B1 = 1.0;							// Tesla
 
 	ors_frequency = 0.0;
-	ors_bandwidth = 500000.0;
+	ors_bandwidth = 10.0;
 	gradient_duration = 20e-3;
 	exc_pulse_time = 0.5;
+
+	int c = 0;
+
+	for (double frequency = -1000.0; frequency < 1000.0; frequency += 100.0)
+	{
+		for (double bandwidth = 50.0; bandwidth < 550.0; bandwidth += 50.0)
+		{
+			for (int N_part = 0.0; N_part < 1e3; N_part += 50)
+			{
+				Experiment exp;
+				exp.ors_frequency = frequency;
+				exp.ors_bandwidth = bandwidth;
+				exp.N_particles = N_part;
+				exp.id = c;
+				experiments.push_back(exp);
+
+				c++;
+			}
+		}
+	}
+
+	std::cout << "Starting " << experiments.size() << " experiments" << std::endl;
 }
 
 Simulator::~Simulator()
@@ -61,12 +83,25 @@ Simulator::~Simulator()
 
 void Simulator::start()
 {
+	for (int c = 0; c < experiments.size(); c++)
+		start_experiment(experiments[c]);
+}
+
+void Simulator::start_experiment(const Experiment& p_exp)
+{
+	std::cout << "Starting experiment " << p_exp.id << std::endl;
+
+	ors_frequency = p_exp.ors_frequency;
+	ors_bandwidth = p_exp.ors_bandwidth;
+	N_particles = p_exp.N_particles;
+	N_protons = p_exp.N_protons;
+	dt = p_exp.dt;
+	max_iterations = p_exp.max_iterations;
+	volume = p_exp.volume;
+
 	init();
 
 	apply_ors_pulse();
-
-	applying_gradient = true;
-	running = true;
 
 	while (running)
 	{
@@ -79,16 +114,19 @@ void Simulator::start()
 		if (t > gradient_duration)
 			applying_gradient = false;
 
+		if (t > exc_pulse_time && !has_applied_exc_pulse)
+		{
+			apply_exc_pulse();
+			has_applied_exc_pulse = true;
+		}
+
 		get_signal();
 		iterate();
 
 		t += dt;
 		iteration++;
 	}
-
-	//apply_exc_pulse();
-	//get_signal();
-
+	
 	output();
 }
 
@@ -96,17 +134,25 @@ void Simulator::init()
 {
 	protons.resize(N_protons);
 	particles.resize(N_particles);
+	offsets.clear();
+	signals.clear();
 
 	for (int c = 0; c < N_protons; c++)
 	{
-		protons[c].position = vec3d(random.get_random(), random.get_random(), random.get_random()) * space_size;
+		protons[c].position = vec3d(random.get_random(), random.get_random(), random.get_random()) * volume;
 		protons[c].magnetization = vec3d(0, 0, M0);
 	}
 
 	for (int c = 0; c < N_particles; c++)
 	{
-		particles[c].position = vec3d(random.get_random(), random.get_random(), random.get_random()) * space_size;
+		particles[c].position = vec3d(random.get_random(), random.get_random(), random.get_random()) * volume;
 	}
+
+	t = 0.0;
+	iteration = 0;
+	has_applied_exc_pulse = false;
+	applying_gradient = true;
+	running = true;
 }
 
 void Simulator::iterate()
@@ -122,6 +168,16 @@ void Simulator::iterate()
 	}
 }
 
+double Simulator::get_z_magnetization()
+{
+	double sum = 0.0;
+
+	for (int c = 0; c < N_protons; c++)
+		sum += protons[c].magnetization.z;
+
+	return sum / (double) N_protons;
+}
+
 double Simulator::get_signal()
 {
 	calculate_global_magnetization();
@@ -129,7 +185,7 @@ double Simulator::get_signal()
 	double signal = sqrt(M.x * M.x + M.y * M.y);
 
 	signals.push_back(signal);
-	std::cout << "Iteration: " << iteration << ", time: " << t << ", signal = " << signal << std::endl;
+	std::cout << "Iteration: " << iteration << ", time: " << t << ", signal = " << signal << ", z = " << get_z_magnetization() << std::endl;
 
 	return signal;
 }
@@ -151,20 +207,20 @@ void Simulator::calculate_global_magnetization()
 
 void Simulator::assert_in_space(Spatial* p_particle)
 {
-	if (p_particle->position.x > space_size.x)
-		p_particle->position.x -= space_size.x * 2.0;
-	else if (p_particle->position.x < space_size.x)
-		p_particle->position.x += space_size.x * 2.0;
+	if (p_particle->position.x > volume.x)
+		p_particle->position.x -= volume.x * 2.0;
+	else if (p_particle->position.x < volume.x)
+		p_particle->position.x += volume.x * 2.0;
 
-	if (p_particle->position.y > space_size.y)
-		p_particle->position.y -= space_size.y * 2.0;
-	else if (p_particle->position.y < space_size.y)
-		p_particle->position.y += space_size.y * 2.0;
+	if (p_particle->position.y > volume.y)
+		p_particle->position.y -= volume.y * 2.0;
+	else if (p_particle->position.y < volume.y)
+		p_particle->position.y += volume.y * 2.0;
 
-	if (p_particle->position.z > space_size.z)
-		p_particle->position.z -= space_size.z * 2.0;
-	else if (p_particle->position.z < space_size.z)
-		p_particle->position.z += space_size.z * 2.0;
+	if (p_particle->position.z > volume.z)
+		p_particle->position.z -= volume.z * 2.0;
+	else if (p_particle->position.z < volume.z)
+		p_particle->position.z += volume.z * 2.0;
 }
 
 void Simulator::update_proton(Proton& p_particle)
@@ -193,8 +249,8 @@ void Simulator::update_proton_magnetization(Proton& p_proton)
 	double E1 = exp(-R1 * dt);
 	double E2 = exp(-R2 * dt);
 
-	magn.x = (magn.x * cos(theta) + magn.y * sin(theta));
-	magn.y = (magn.x * sin(theta) - magn.y * cos(theta));
+	magn.x = E2 * (magn.x * cos(theta) + magn.y * sin(theta));
+	magn.y = E2 * (magn.x * sin(theta) - magn.y * cos(theta));
 	magn.z = E1 * magn.z + (1.0 - E1) * M0;
 }
 
@@ -258,8 +314,8 @@ void Simulator::output()
 {
 	std::ofstream file_off;
 	std::ofstream file_sig;
-	file_off.open("offsets.txt");
-	file_sig.open("signals.txt");
+	file_off.open("exp_" + std::to_string(current_exp) + "_offsets.txt");
+	file_sig.open("exp_" + std::to_string(current_exp) + "_signals.txt");
 
 	for (int c = 0; c < offsets.size(); c++)
 		file_off << offsets[c] << "\n";

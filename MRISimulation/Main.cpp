@@ -9,6 +9,6 @@ int main()
 	simulator.start();
 
 	std::cout << "Finished" << std::endl;
-
+	
 	return 0;
 }
