@@ -24,9 +24,9 @@ struct Experiment
 {
 	double dt = 1e-8;
 
-	int max_iterations = 200;
+	int max_iterations = 192;
 
-	int N_protons = 1e6;
+	int N_protons = 1e4;
 	int N_particles = 1e2;
 
 	double ors_frequency = 300.0;
@@ -35,6 +35,10 @@ struct Experiment
 	vec3d volume = vec3d(4e-6);
 
 	int id = -1;
+
+	int averages = 10;
+
+	std::vector<double> results;
 };
 
 class Simulator
@@ -45,7 +49,7 @@ public:
 
 	void start();
 
-	void start_experiment(const Experiment& p_exp);
+	void start_experiment(Experiment& p_exp);
 
 	double get_signal();
 	double get_contrast();

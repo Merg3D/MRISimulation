@@ -72,7 +72,7 @@ Simulator::Simulator()
 	{
 		for (double bandwidth = 50.0; bandwidth <= 550.0; bandwidth += 100.0)
 		{*/
-			for (int N_part = 0; N_part <= 1e4; N_part += 1)
+			for (int N_part = 0; N_part <= 100; N_part += 5)
 			{
 				Experiment exp;
 				exp.ors_frequency = 100.0;
@@ -101,7 +101,7 @@ void Simulator::start()
 		start_experiment(experiments[c]);
 }
 
-void Simulator::start_experiment(const Experiment& p_exp)
+void Simulator::start_experiment(Experiment& p_exp)
 {
 	current_exp = p_exp.id;
 	std::cout << "Starting experiment " << current_exp << std::endl;
@@ -114,43 +114,47 @@ void Simulator::start_experiment(const Experiment& p_exp)
 	max_iterations = p_exp.max_iterations;
 	volume = p_exp.volume;
 
-	init();
-
-	apply_ors_pulse();
-
-	while (running)
+	for (int a = 0; a < p_exp.averages; a++)
 	{
-		if (iteration >= max_iterations)
+		init();
+
+		apply_ors_pulse();
+
+		while (running)
 		{
-			running = false;
-			break;
+			if (iteration >= max_iterations)
+			{
+				running = false;
+				break;
+			}
+
+			if (t > gradient_duration)
+				applying_gradient = false;
+
+			if (t > exc_pulse_time && !has_applied_exc_pulse)
+			{
+				apply_exc_pulse();
+				has_applied_exc_pulse = true;
+			}
+
+			// save each 100 iterations
+			if (iteration % 100 == 0)
+				save();
+
+			get_signal();
+			iterate();
+
+			t += dt;
+			iteration++;
 		}
 
-		if (t > gradient_duration)
-			applying_gradient = false;
+		std::cout << std::endl;
+		std::cout << std::endl;
 
-		if (t > exc_pulse_time && !has_applied_exc_pulse)
-		{
-			apply_exc_pulse();
-			has_applied_exc_pulse = true;
-		}
-
-		// save each 100 iterations
-		if (iteration % 100 == 0)
-			save();
-
-		get_signal();
-		iterate();
-
-		t += dt;
-		iteration++;
+		p_exp.results.push_back(signals[signals.size() - 1]);
 	}
 
-	std::cout << std::endl;
-	std::cout << std::endl;
-	
 	save();
-
 }
 
 void Simulator::init()
@@ -342,16 +346,22 @@ void Simulator::save()
 {
 	std::ofstream file_off;
 	std::ofstream file_sig;
-	std::string exp = std::to_string(current_exp);
+	std::string exp = "0";
 
 	//file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\" + exp + "\\exp_" + exp + "_offsets.txt");
 	file_sig.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\exp_" + exp + "_signals.txt");
+	
+	for (int c = 0; c < experiments.size(); c++)
+	{
+		std::string result = "";
 
-	for (int c = 0; c < offsets.size(); c++)
-		file_off << offsets[c] << "\n";
+		for (int a = 0; a < experiments[c].results.size(); a++)
+		{
+			result += std::to_string(experiments[c].results[a]) + (a != experiments[c].results.size() -1 ? ", " : "");
+		}
 
-	for (int c = 0; c < signals.size(); c++)
-		file_sig << signals[c] << "\n";
+		file_sig << experiments[c].N_particles << ", " << result << "\n";
+	}
 	
 	file_off.close();
 	file_sig.close();
