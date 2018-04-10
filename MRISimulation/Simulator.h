@@ -24,15 +24,15 @@ struct Experiment
 {
 	double dt = 1e-8;
 
-	int max_iterations = 1e8;
+	int max_iterations = 200;
 
 	int N_protons = 1e6;
 	int N_particles = 1e2;
 
-	double ors_frequency = 100.0;
-	double ors_bandwidth = 300.0;
+	double ors_frequency = 300.0;
+	double ors_bandwidth = 100.0;
 
-	vec3d volume = vec3d(1.5e-5);
+	vec3d volume = vec3d(4e-6);
 
 	int id = -1;
 };
@@ -80,7 +80,7 @@ private:
 	// calculate dipole field for SPIO particle given distance to proton 
 	double B_dip(const vec3d& p_r);
 
-	void output();
+	void save();
 	
 	std::vector<Proton> protons;
 	std::vector<Particle> particles;

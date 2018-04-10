@@ -37,40 +37,54 @@ Simulator::Simulator()
 	normal_dt = pow(particle_radius, 2) / (6 * D);	// s
 	dt = normal_dt;							// s
 
-	exc_pulse_flipangle = 10.0;				// degrees
+	exc_pulse_flipangle = 90.0;				// degrees
 	ors_pulse_flipangle = 90.0;				// degrees
 
 	dt = 1e-2;								// s
 
-	volume = vec3d(1.5e-5);				// m
+	volume = vec3d(1.5e-5);					// m
 
-	B0 = 7.0;								// T
-	B1 = 1.0;							// Tesla
+	B0 = 7.0;								// Tesla
+	B1 = 10.0;								// Tesla
 
 	ors_frequency = 0.0;
-	ors_bandwidth = 10.0;
+	ors_bandwidth = 100.0;
 	gradient_duration = 20e-3;
-	exc_pulse_time = 0.5;
+	exc_pulse_time = 1.9e-6;
+
+	if (gradient_duration > exc_pulse_time)
+		gradient_duration = exc_pulse_time;
 
 	int c = 0;
 
-	for (double frequency = -1000.0; frequency < 1000.0; frequency += 100.0)
+	// test
+
+	/*Experiment exp;
+	exp.ors_frequency = 100.0;
+	exp.ors_bandwidth = 200.0;
+	exp.N_particles = 5;
+	exp.id = -1;
+	experiments.push_back(exp);*/
+
+	// push back experiments
+
+	/*for (double frequency = -600; frequency <= 600; frequency += 100.0)
 	{
-		for (double bandwidth = 50.0; bandwidth < 550.0; bandwidth += 50.0)
-		{
-			for (int N_part = 0.0; N_part < 1e3; N_part += 50)
+		for (double bandwidth = 50.0; bandwidth <= 550.0; bandwidth += 100.0)
+		{*/
+			for (int N_part = 0; N_part <= 1e4; N_part += 1)
 			{
 				Experiment exp;
-				exp.ors_frequency = frequency;
-				exp.ors_bandwidth = bandwidth;
+				exp.ors_frequency = 100.0;
+				exp.ors_bandwidth = 100.0;
 				exp.N_particles = N_part;
 				exp.id = c;
 				experiments.push_back(exp);
 
 				c++;
 			}
-		}
-	}
+		/*}
+	}*/
 
 	std::cout << "Starting " << experiments.size() << " experiments" << std::endl;
 }
@@ -89,7 +103,8 @@ void Simulator::start()
 
 void Simulator::start_experiment(const Experiment& p_exp)
 {
-	std::cout << "Starting experiment " << p_exp.id << std::endl;
+	current_exp = p_exp.id;
+	std::cout << "Starting experiment " << current_exp << std::endl;
 
 	ors_frequency = p_exp.ors_frequency;
 	ors_bandwidth = p_exp.ors_bandwidth;
@@ -120,14 +135,22 @@ void Simulator::start_experiment(const Experiment& p_exp)
 			has_applied_exc_pulse = true;
 		}
 
+		// save each 100 iterations
+		if (iteration % 100 == 0)
+			save();
+
 		get_signal();
 		iterate();
 
 		t += dt;
 		iteration++;
 	}
+
+	std::cout << std::endl;
+	std::cout << std::endl;
 	
-	output();
+	save();
+
 }
 
 void Simulator::init()
@@ -185,7 +208,7 @@ double Simulator::get_signal()
 	double signal = sqrt(M.x * M.x + M.y * M.y);
 
 	signals.push_back(signal);
-	std::cout << "Iteration: " << iteration << ", time: " << t << ", signal = " << signal << ", z = " << get_z_magnetization() << std::endl;
+	std::cout << "Iteration: " << iteration << ", time: " << t << ", signal = " << signal << ", z = " << get_z_magnetization() << "\r";
 
 	return signal;
 }
@@ -256,13 +279,17 @@ void Simulator::update_proton_magnetization(Proton& p_proton)
 
 void Simulator::apply_exc_pulse()
 {
-	std::cout << "Applying ORS pulse" << std::endl;
+	std::cout << std::endl;
+	std::cout << "Applying exc pulse" << "\r";
 
 	mat4 rot;
 	rot.rotate_x(exc_pulse_flipangle * DEG_RAD);
 
 	for (int c = 0; c < N_protons; c++)
 		protons[c].magnetization = (rot * vec4d(protons[c].magnetization, 1.0)).get_xyz();
+
+
+	std::cout << "Finished exc pulse" << std::endl;
 }
 
 void Simulator::apply_ors_pulse()
@@ -270,7 +297,8 @@ void Simulator::apply_ors_pulse()
 	mat4 rot;
 	rot.rotate_x(ors_pulse_flipangle * DEG_RAD);
 
-	std::cout << "Applying ORS pulse" << std::endl;
+	std::cout << std::endl;
+	std::cout << "Applying ORS pulse" << "\r";
 
 	int count = 0;
 
@@ -310,12 +338,14 @@ double Simulator::B_dip(const vec3d& p_r)
 	return B_eq * pow(particle_radius / p_r.length(), 3) * (3 * pow(cos(theta), 2) - 1.0);
 }
 
-void Simulator::output()
+void Simulator::save()
 {
 	std::ofstream file_off;
 	std::ofstream file_sig;
-	file_off.open("exp_" + std::to_string(current_exp) + "_offsets.txt");
-	file_sig.open("exp_" + std::to_string(current_exp) + "_signals.txt");
+	std::string exp = std::to_string(current_exp);
+
+	//file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\" + exp + "\\exp_" + exp + "_offsets.txt");
+	file_sig.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\exp_" + exp + "_signals.txt");
 
 	for (int c = 0; c < offsets.size(); c++)
 		file_off << offsets[c] << "\n";
