@@ -29,14 +29,14 @@ struct Experiment
 	int N_protons = 1e4;
 	int N_particles = 1e2;
 
-	double ors_frequency = 300.0;
+	double ors_frequency = 200.0;
 	double ors_bandwidth = 100.0;
 
-	vec3d volume = vec3d(4e-6);
+	vec3d volume = vec3d(1e-6); // m
 
 	int id = -1;
 
-	int averages = 10;
+	int averages = 2;
 
 	std::vector<double> results;
 };
@@ -52,7 +52,6 @@ public:
 	void start_experiment(Experiment& p_exp);
 
 	double get_signal();
-	double get_contrast();
 
 private:
 

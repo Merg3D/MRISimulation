@@ -8,12 +8,11 @@
 Simulator::Simulator()
 {
 	max_iterations = 1e2;
+	int max_particles = 200;
 
-	double Cc = 1.0e-3;						// M
-
-	N_protons = 1e4;
-	N_particles = 1.5e2;
-
+	double Cc = 13.0;						// mM
+	double V = max_particles / 9.0e17 / Cc;// ml
+	
 	D = 3.0e-9;								// m^2 s^-1
 
 	double T1 = 3.0;						// s
@@ -40,7 +39,7 @@ Simulator::Simulator()
 	exc_pulse_flipangle = 90.0;				// degrees
 	ors_pulse_flipangle = 90.0;				// degrees
 
-	dt = 1e-2;								// s
+	dt = 1e-8;								// s
 
 	volume = vec3d(1.5e-5);					// m
 
@@ -67,17 +66,20 @@ Simulator::Simulator()
 	experiments.push_back(exp);*/
 
 	// push back experiments
+	double frequency = 100.0;
+	double bandwidth = 100.0;
 
-	/*for (double frequency = -600; frequency <= 600; frequency += 100.0)
+	/*for (; frequency <= 600; frequency += 200.0)
 	{
-		for (double bandwidth = 50.0; bandwidth <= 550.0; bandwidth += 100.0)
+		for (; bandwidth <= 650.0; bandwidth += 200.0)
 		{*/
-			for (int N_part = 0; N_part <= 100; N_part += 5)
+			for (int N_part = 10; N_part <= max_particles; N_part += 10)
 			{
 				Experiment exp;
-				exp.ors_frequency = 100.0;
-				exp.ors_bandwidth = 100.0;
-				exp.N_particles = N_part;
+				exp.ors_frequency = frequency;
+				exp.ors_bandwidth = bandwidth;
+				exp.N_particles = N_part;				
+				exp.volume = vec3d(std::pow(V, 1.0 / 3.0) * 1e-2); // m
 				exp.id = c;
 				experiments.push_back(exp);
 
@@ -217,11 +219,6 @@ double Simulator::get_signal()
 	return signal;
 }
 
-double Simulator::get_contrast()
-{
-	return 0.0;
-}
-
 void Simulator::calculate_global_magnetization()
 {
 	vec3d sum = 0.0;
@@ -348,8 +345,17 @@ void Simulator::save()
 	std::ofstream file_sig;
 	std::string exp = "0";
 
-	//file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\" + exp + "\\exp_" + exp + "_offsets.txt");
+	file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\exp_" + exp + "_offsets.txt");
+
+	for (int c = 0; c < 100; c++)
+	{
+		file_off << offsets[c] << std::endl;
+	}
+
+	file_off.close();
+
 	file_sig.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\exp_" + exp + "_signals.txt");
+	file_sig << "dt, volume, N_protons, N_particles, ors_bandwidth, ors_frequency, values" << "\n";
 	
 	for (int c = 0; c < experiments.size(); c++)
 	{
@@ -360,9 +366,15 @@ void Simulator::save()
 			result += std::to_string(experiments[c].results[a]) + (a != experiments[c].results.size() -1 ? ", " : "");
 		}
 
-		file_sig << experiments[c].N_particles << ", " << result << "\n";
+		file_sig <<
+			experiments[c].dt << ", " <<
+			experiments[c].volume.x << ", " <<
+			experiments[c].N_protons << ", " <<
+			experiments[c].N_particles << ", " <<
+			experiments[c].ors_bandwidth << ", " <<
+			experiments[c].ors_frequency << ", " <<
+			result << "\n";
 	}
 	
-	file_off.close();
 	file_sig.close();
 }
