@@ -36,7 +36,7 @@ struct Experiment
 
 	int id = -1;
 
-	int averages = 2;
+	int averages = 6;
 
 	std::vector<double> results;
 };

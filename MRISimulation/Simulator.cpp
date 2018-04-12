@@ -10,8 +10,9 @@ Simulator::Simulator()
 	max_iterations = 1e2;
 	int max_particles = 200;
 
-	double Cc = 13.0;						// mM
-	double V = max_particles / 9.0e17 / Cc;// ml
+	double scale = 200.0 / 6.38e12;
+	double Cc = 1.0;						// mM
+	double V = 2.5 * scale / Cc;			// ml
 	
 	D = 3.0e-9;								// m^2 s^-1
 
@@ -73,7 +74,7 @@ Simulator::Simulator()
 	{
 		for (; bandwidth <= 650.0; bandwidth += 200.0)
 		{*/
-			for (int N_part = 10; N_part <= max_particles; N_part += 10)
+			for (int N_part = 210; N_part <= max_particles * 2; N_part += 10)
 			{
 				Experiment exp;
 				exp.ors_frequency = frequency;
@@ -364,6 +365,16 @@ void Simulator::save()
 		for (int a = 0; a < experiments[c].results.size(); a++)
 		{
 			result += std::to_string(experiments[c].results[a]) + (a != experiments[c].results.size() -1 ? ", " : "");
+		}
+
+		int l = experiments[0].results.size() - experiments[c].results.size();
+
+		if (experiments[c].results.size() > 0 && c != 0 && l != 0)
+			result += ", ";
+
+		for (int a = 0; a < l; a++)
+		{
+			result += std::string("1.000000") + (a != l - 1 ? ", " : "");
 		}
 
 		file_sig <<
