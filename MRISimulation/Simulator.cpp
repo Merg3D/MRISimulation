@@ -8,11 +8,6 @@
 Simulator::Simulator()
 {
 	max_iterations = 1e2;
-	int max_particles = 200;
-
-	double scale = 200.0 / 6.38e12;
-	double Cc = 1.0;						// mM
-	double V = 2.5 * scale / Cc;			// ml
 	
 	D = 3.0e-9;								// m^2 s^-1
 
@@ -57,37 +52,31 @@ Simulator::Simulator()
 
 	int c = 0;
 
-	// test
-
-	/*Experiment exp;
-	exp.ors_frequency = 100.0;
-	exp.ors_bandwidth = 200.0;
-	exp.N_particles = 5;
-	exp.id = -1;
-	experiments.push_back(exp);*/
-
 	// push back experiments
-	double frequency = 100.0;
-	double bandwidth = 100.0;
-
-	/*for (; frequency <= 600; frequency += 200.0)
+	for (double frequency = 100.0; frequency <= 100; frequency += 100.0)
 	{
-		for (; bandwidth <= 650.0; bandwidth += 200.0)
-		{*/
-			for (int N_part = 210; N_part <= max_particles * 2; N_part += 10)
+		for (double bandwidth = 100.0; bandwidth <= 100.0; bandwidth += 200.0)
+		{
+			for (double Cc = 0.01; Cc <= 3.0; Cc += 0.01)
 			{
+				int max_particles = 50;
+
+				double scale = max_particles / 6.38e12;
+				double V = 2.5 * scale / Cc;			// ml
+
 				Experiment exp;
 				exp.ors_frequency = frequency;
 				exp.ors_bandwidth = bandwidth;
-				exp.N_particles = N_part;				
-				exp.volume = vec3d(std::pow(V, 1.0 / 3.0) * 1e-2); // m
+				exp.N_particles = max_particles;
+				exp.volume = vec3d(std::pow(V, 1.0 / 3.0) * 1e-2); // m^3
+				exp.Cc = Cc;
 				exp.id = c;
 				experiments.push_back(exp);
 
 				c++;
 			}
-		/*}
-	}*/
+		}
+	}
 
 	std::cout << "Starting " << experiments.size() << " experiments" << std::endl;
 }
@@ -346,17 +335,17 @@ void Simulator::save()
 	std::ofstream file_sig;
 	std::string exp = "0";
 
-	file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\exp_" + exp + "_offsets.txt");
+	/*file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\exp_" + exp + "_offsets.txt");
 
 	for (int c = 0; c < 100; c++)
 	{
 		file_off << offsets[c] << std::endl;
 	}
 
-	file_off.close();
+	file_off.close();*/
 
 	file_sig.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\exp_" + exp + "_signals.txt");
-	file_sig << "dt, volume, N_protons, N_particles, ors_bandwidth, ors_frequency, values" << "\n";
+	file_sig << "dt, volume, N_protons, N_particles, ors_bandwidth, ors_frequency, Cc, values" << "\n";
 	
 	for (int c = 0; c < experiments.size(); c++)
 	{
@@ -384,6 +373,7 @@ void Simulator::save()
 			experiments[c].N_particles << ", " <<
 			experiments[c].ors_bandwidth << ", " <<
 			experiments[c].ors_frequency << ", " <<
+			experiments[c].Cc << ", " <<
 			result << "\n";
 	}
 	

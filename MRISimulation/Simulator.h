@@ -32,11 +32,13 @@ struct Experiment
 	double ors_frequency = 200.0;
 	double ors_bandwidth = 100.0;
 
+	double Cc;
+
 	vec3d volume = vec3d(1e-6); // m
 
 	int id = -1;
 
-	int averages = 6;
+	int averages = 5;
 
 	std::vector<double> results;
 };
