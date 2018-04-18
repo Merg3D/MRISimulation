@@ -45,7 +45,9 @@ Simulator::Simulator()
 	ors_frequency = 0.0;
 	ors_bandwidth = 100.0;
 	gradient_duration = 20e-3;
-	exc_pulse_time = 1.9e-6;
+	exc_pulse_time = 20e-3;
+
+	N_threads = 8;
 
 	if (gradient_duration > exc_pulse_time)
 		gradient_duration = exc_pulse_time;
@@ -53,11 +55,11 @@ Simulator::Simulator()
 	int c = 0;
 
 	// push back experiments
-	for (double frequency = 100.0; frequency <= 100; frequency += 100.0)
+	for (double frequency = -350; frequency <= 350; frequency += 200.0)
 	{
-		for (double bandwidth = 100.0; bandwidth <= 100.0; bandwidth += 200.0)
+		for (double bandwidth = 350.0; bandwidth <= 350.0; bandwidth += 200.0)
 		{
-			for (double Cc = 0.01; Cc <= 3.0; Cc += 0.01)
+			for (double Cc = 0.05; Cc <= 2.0; Cc += 0.05)
 			{
 				int max_particles = 50;
 
@@ -112,25 +114,16 @@ void Simulator::start_experiment(Experiment& p_exp)
 
 		apply_ors_pulse();
 
-		while (running)
+		while (true)
 		{
 			if (iteration >= max_iterations)
-			{
-				running = false;
 				break;
-			}
 
 			if (t > gradient_duration)
 				applying_gradient = false;
 
-			if (t > exc_pulse_time && !has_applied_exc_pulse)
-			{
-				apply_exc_pulse();
-				has_applied_exc_pulse = true;
-			}
-
 			// save each 100 iterations
-			if (iteration % 100 == 0)
+			if (iteration % 1000 == 0)
 				save();
 
 			get_signal();
@@ -139,6 +132,8 @@ void Simulator::start_experiment(Experiment& p_exp)
 			t += dt;
 			iteration++;
 		}
+
+		apply_exc_pulse();
 
 		std::cout << std::endl;
 		std::cout << std::endl;
@@ -178,13 +173,32 @@ void Simulator::iterate()
 {
 	step_size = sqrt(6 * D * dt);
 
-	for (int c = 0; c < N_protons; c++)
+	for (int t = 0; t < N_threads; t++)
 	{
-		Proton& proton = protons[c];
+		auto function = &Simulator::update_proton_positions;
+		int start = t * N_protons / N_threads;
+		int end = (t + 1) * N_protons / N_threads;
 
-		update_proton(proton);
-		assert_in_space(&proton);
+		threads.push_back(std::thread(function, this, start, end));
+		//update_proton_positions(start, end);
 	}
+
+	for (int t = 0; t < N_threads; t++)
+	{
+		auto function = &Simulator::update_proton_magnetizations;
+		int start = t * N_protons / N_threads;
+		int end = (t + 1) * N_protons / N_threads;
+
+		threads.push_back(std::thread(function, this, start, end));
+		//update_proton_magnetizations(start, end);
+	}
+
+	for (int t = 0; t < N_threads * 2; t++)
+	{
+		threads[t].join();
+	}
+
+	threads.clear();
 }
 
 double Simulator::get_z_magnetization()
@@ -219,33 +233,48 @@ void Simulator::calculate_global_magnetization()
 	global_magnetization = sum / (double) N_protons;
 }
 
-void Simulator::assert_in_space(Spatial* p_particle)
+void Simulator::assert_in_space(Proton& p_proton)
 {
-	if (p_particle->position.x > volume.x)
-		p_particle->position.x -= volume.x * 2.0;
-	else if (p_particle->position.x < volume.x)
-		p_particle->position.x += volume.x * 2.0;
+	if (p_proton.position.x > volume.x)
+		p_proton.position.x -= volume.x * 2.0;
+	else if (p_proton.position.x < volume.x)
+		p_proton.position.x += volume.x * 2.0;
 
-	if (p_particle->position.y > volume.y)
-		p_particle->position.y -= volume.y * 2.0;
-	else if (p_particle->position.y < volume.y)
-		p_particle->position.y += volume.y * 2.0;
+	if (p_proton.position.y > volume.y)
+		p_proton.position.y -= volume.y * 2.0;
+	else if (p_proton.position.y < volume.y)
+		p_proton.position.y += volume.y * 2.0;
 
-	if (p_particle->position.z > volume.z)
-		p_particle->position.z -= volume.z * 2.0;
-	else if (p_particle->position.z < volume.z)
-		p_particle->position.z += volume.z * 2.0;
+	if (p_proton.position.z > volume.z)
+		p_proton.position.z -= volume.z * 2.0;
+	else if (p_proton.position.z < volume.z)
+		p_proton.position.z += volume.z * 2.0;
 }
 
-void Simulator::update_proton(Proton& p_particle)
+void Simulator::update_proton_positions(int start, int end)
 {
-	update_position(&p_particle);
-	update_proton_magnetization(p_particle);
+	for (int c = start; c < end; c++)
+	{
+		Proton& proton = protons[c];
+
+		update_proton_position(proton);
+		assert_in_space(proton);
+	}
 }
 
-void Simulator::update_position(Spatial* p_particle)
+void Simulator::update_proton_magnetizations(int start, int end)
 {
-	p_particle->position += random.get_random_vec3() * step_size;
+	for (int c = start; c < end; c++)
+	{
+		Proton& proton = protons[c];
+
+		update_proton_magnetization(proton);
+	}
+}
+
+void Simulator::update_proton_position(Proton& p_proton)
+{
+	p_proton.position += random.get_random_vec3() * step_size;
 }
 
 void Simulator::update_proton_magnetization(Proton& p_proton)

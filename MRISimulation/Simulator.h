@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <thread>
+#include <atomic>
 
 #include "Vec3.h"
 #include "Utility.h"
@@ -24,9 +26,9 @@ struct Experiment
 {
 	double dt = 1e-8;
 
-	int max_iterations = 192;
+	int max_iterations = 1e6;
 
-	int N_protons = 1e4;
+	int N_protons = 1e5;
 	int N_particles = 1e2;
 
 	double ors_frequency = 200.0;
@@ -38,7 +40,7 @@ struct Experiment
 
 	int id = -1;
 
-	int averages = 5;
+	int averages = 2;
 
 	std::vector<double> results;
 };
@@ -66,13 +68,14 @@ private:
 	void calculate_global_magnetization();
 
 	// assert periodic boundary conditions
-	void assert_in_space(Spatial* p_particle);
+	void assert_in_space(Proton& p_proton);
 	
 	// update position for next iteration
-	void update_position(Spatial* p_spatial);
+	void update_proton_positions(int start, int end);
+	void update_proton_position(Proton& p_proton);
 	
 	// update proton (position and magnetization)
-	void update_proton(Proton& p_proton);
+	void update_proton_magnetizations(int start, int end);
 	void update_proton_magnetization(Proton& p_proton);
 	
 	// apply excitation and off-resonance pulses along x-axis
@@ -96,6 +99,7 @@ private:
 
 	// experiments
 	std::vector<Experiment> experiments;
+	std::vector<std::thread> threads;
 
 	int current_exp;
 
@@ -128,6 +132,8 @@ private:
 
 	int N_protons;
 	int N_particles;
+
+	int N_threads;
 
 	double ors_frequency;		// Hz
 	double ors_bandwidth;		// Hz
