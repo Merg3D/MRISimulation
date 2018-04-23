@@ -7,6 +7,7 @@
 
 Simulator::Simulator()
 {
+	// set all members
 	max_iterations = 1e2;
 	
 	D = 3.0e-9;								// m^2 s^-1
@@ -35,33 +36,34 @@ Simulator::Simulator()
 	exc_pulse_flipangle = 90.0;				// degrees
 	ors_pulse_flipangle = 90.0;				// degrees
 
-	dt = 1e-8;								// s
-
 	volume = vec3d(1.5e-5);					// m
 
 	B0 = 7.0;								// Tesla
-	B1 = 10.0;								// Tesla
+	B1 = 0.00;								// Tesla
 
 	ors_frequency = 0.0;
 	ors_bandwidth = 100.0;
 	gradient_duration = 20e-3;
 	exc_pulse_time = 20e-3;
 
-	N_threads = 8;
+	N_threads = 4;
 
 	if (gradient_duration > exc_pulse_time)
 		gradient_duration = exc_pulse_time;
 
 	int c = 0;
 
-	// push back experiments
-	for (double frequency = -350; frequency <= 350; frequency += 200.0)
+	// set up experiments
+	for (double frequency = 400; frequency <= 400; frequency += 200.0)
 	{
-		for (double bandwidth = 350.0; bandwidth <= 350.0; bandwidth += 200.0)
+		for (double bandwidth = 600.0; bandwidth <= 600.0; bandwidth += 200.0)
 		{
-			for (double Cc = 0.05; Cc <= 2.0; Cc += 0.05)
+			for (double Cc = 0.05; Cc <= 2; Cc += 0.05)
 			{
-				int max_particles = 50;
+				if (abs(frequency) <= bandwidth / 2.0)
+					continue;
+
+				int max_particles = 200;
 
 				double scale = max_particles / 6.38e12;
 				double V = 2.5 * scale / Cc;			// ml
@@ -87,6 +89,11 @@ Simulator::~Simulator()
 {
 	protons.clear();
 	particles.clear();
+	
+	for (int c = 0; c < threads.size(); c++)
+		threads[c].join();
+
+	threads.clear();
 }
 
 void Simulator::start()
@@ -98,6 +105,9 @@ void Simulator::start()
 void Simulator::start_experiment(Experiment& p_exp)
 {
 	current_exp = p_exp.id;
+
+	std::cout << std::endl;
+	std::cout << std::endl;
 	std::cout << "Starting experiment " << current_exp << std::endl;
 
 	ors_frequency = p_exp.ors_frequency;
@@ -119,12 +129,8 @@ void Simulator::start_experiment(Experiment& p_exp)
 			if (iteration >= max_iterations)
 				break;
 
-			if (t > gradient_duration)
-				applying_gradient = false;
-
-			// save each 100 iterations
-			if (iteration % 1000 == 0)
-				save();
+			//if (t > gradient_duration)
+			//	applying_gradient = false;
 
 			get_signal();
 			iterate();
@@ -135,10 +141,9 @@ void Simulator::start_experiment(Experiment& p_exp)
 
 		apply_exc_pulse();
 
-		std::cout << std::endl;
-		std::cout << std::endl;
+		p_exp.results.push_back(get_signal());
 
-		p_exp.results.push_back(signals[signals.size() - 1]);
+		std::cout << std::endl;
 	}
 
 	save();
@@ -236,19 +241,19 @@ void Simulator::calculate_global_magnetization()
 void Simulator::assert_in_space(Proton& p_proton)
 {
 	if (p_proton.position.x > volume.x)
-		p_proton.position.x -= volume.x * 2.0;
-	else if (p_proton.position.x < volume.x)
-		p_proton.position.x += volume.x * 2.0;
+		p_proton.position.x -= volume.x;
+	else if (p_proton.position.x < 0.0)
+		p_proton.position.x += volume.x;
 
 	if (p_proton.position.y > volume.y)
-		p_proton.position.y -= volume.y * 2.0;
-	else if (p_proton.position.y < volume.y)
-		p_proton.position.y += volume.y * 2.0;
+		p_proton.position.y -= volume.y;
+	else if (p_proton.position.y < 0.0)
+		p_proton.position.y += volume.y;
 
 	if (p_proton.position.z > volume.z)
-		p_proton.position.z -= volume.z * 2.0;
-	else if (p_proton.position.z < volume.z)
-		p_proton.position.z += volume.z * 2.0;
+		p_proton.position.z -= volume.z;
+	else if (p_proton.position.z < 0.0)
+		p_proton.position.z += volume.z;
 }
 
 void Simulator::update_proton_positions(int start, int end)
@@ -286,8 +291,8 @@ void Simulator::update_proton_magnetization(Proton& p_proton)
 	double offset = gamma * Bt - gamma * B0; // relative larmor frequency
 	double theta = gamma * Bt * dt;
 
-	if (applying_gradient)
-		theta += offset * B1 * t;
+	//if (applying_gradient)
+	//	theta += offset * B1;
 
 	double E1 = exp(-R1 * dt);
 	double E2 = exp(-R2 * dt);
@@ -307,8 +312,7 @@ void Simulator::apply_exc_pulse()
 
 	for (int c = 0; c < N_protons; c++)
 		protons[c].magnetization = (rot * vec4d(protons[c].magnetization, 1.0)).get_xyz();
-
-
+	
 	std::cout << "Finished exc pulse" << std::endl;
 }
 
@@ -364,16 +368,16 @@ void Simulator::save()
 	std::ofstream file_sig;
 	std::string exp = "0";
 
-	/*file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\exp_" + exp + "_offsets.txt");
+	file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\decay.txt");
 
-	for (int c = 0; c < 100; c++)
+	for (int c = 0; c < signals.size(); c++)
 	{
-		file_off << offsets[c] << std::endl;
+		file_off << signals[c] << std::endl;
 	}
 
-	file_off.close();*/
+	file_off.close();
 
-	file_sig.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\exp_" + exp + "_signals.txt");
+	file_sig.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\data.txt");
 	file_sig << "dt, volume, N_protons, N_particles, ors_bandwidth, ors_frequency, Cc, values" << "\n";
 	
 	for (int c = 0; c < experiments.size(); c++)

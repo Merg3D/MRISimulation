@@ -26,9 +26,9 @@ struct Experiment
 {
 	double dt = 1e-8;
 
-	int max_iterations = 1e6;
+	int max_iterations = 200;
 
-	int N_protons = 1e5;
+	int N_protons = 2e4;
 	int N_particles = 1e2;
 
 	double ors_frequency = 200.0;
@@ -40,7 +40,7 @@ struct Experiment
 
 	int id = -1;
 
-	int averages = 2;
+	int averages = 5;
 
 	std::vector<double> results;
 };
@@ -55,6 +55,7 @@ public:
 
 	void start_experiment(Experiment& p_exp);
 
+	// calculate and store signal
 	double get_signal();
 
 private:
@@ -62,6 +63,7 @@ private:
 	void init();
 	void iterate();
 
+	// not really necessary
 	double get_z_magnetization();
 
 	// calculate global magnetization
