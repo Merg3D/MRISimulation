@@ -8,7 +8,7 @@
 Simulator::Simulator()
 {
 	// set all members
-	max_iterations = 1e2;
+	max_iterations = 2e2;
 	
 	D = 3.0e-9;								// m^2 s^-1
 
@@ -32,6 +32,7 @@ Simulator::Simulator()
 
 	normal_dt = pow(particle_radius, 2) / (6 * D);	// s
 	dt = normal_dt;							// s
+	dt = 1e-8;								// s
 
 	exc_pulse_flipangle = 90.0;				// degrees
 	ors_pulse_flipangle = 90.0;				// degrees
@@ -44,7 +45,7 @@ Simulator::Simulator()
 	ors_frequency = 0.0;
 	ors_bandwidth = 100.0;
 	gradient_duration = 20e-3;
-	exc_pulse_time = 20e-3;
+	exc_pulse_time = 199 * dt;
 
 	N_threads = 4;
 
@@ -54,16 +55,13 @@ Simulator::Simulator()
 	int c = 0;
 
 	// set up experiments
-	for (double frequency = 400; frequency <= 400; frequency += 200.0)
+	for (double frequency = -500; frequency <= 600; frequency += 100.0)
 	{
-		for (double bandwidth = 600.0; bandwidth <= 600.0; bandwidth += 200.0)
+		for (double bandwidth = 100.0; bandwidth <= 1100.0; bandwidth += 200.0)
 		{
-			for (double Cc = 0.05; Cc <= 2; Cc += 0.05)
+			for (double Cc = 0.05; Cc <= 2.0; Cc += 0.05)
 			{
-				if (abs(frequency) <= bandwidth / 2.0)
-					continue;
-
-				int max_particles = 200;
+				int max_particles = 100;
 
 				double scale = max_particles / 6.38e12;
 				double V = 2.5 * scale / Cc;			// ml
@@ -126,11 +124,14 @@ void Simulator::start_experiment(Experiment& p_exp)
 
 		while (true)
 		{
+			if (t >= exc_pulse_time && !has_applied_exc_pulse)
+			{
+				apply_exc_pulse();
+				has_applied_exc_pulse = true;
+			}
+
 			if (iteration >= max_iterations)
 				break;
-
-			//if (t > gradient_duration)
-			//	applying_gradient = false;
 
 			get_signal();
 			iterate();
@@ -138,8 +139,6 @@ void Simulator::start_experiment(Experiment& p_exp)
 			t += dt;
 			iteration++;
 		}
-
-		apply_exc_pulse();
 
 		p_exp.results.push_back(get_signal());
 
@@ -185,8 +184,10 @@ void Simulator::iterate()
 		int end = (t + 1) * N_protons / N_threads;
 
 		threads.push_back(std::thread(function, this, start, end));
-		//update_proton_positions(start, end);
 	}
+
+	for (int t = 0; t < N_threads; t++)
+		threads[t].join();
 
 	for (int t = 0; t < N_threads; t++)
 	{
@@ -195,13 +196,10 @@ void Simulator::iterate()
 		int end = (t + 1) * N_protons / N_threads;
 
 		threads.push_back(std::thread(function, this, start, end));
-		//update_proton_magnetizations(start, end);
 	}
 
-	for (int t = 0; t < N_threads * 2; t++)
-	{
+	for (int t = 0; t < N_threads; t++)
 		threads[t].join();
-	}
 
 	threads.clear();
 }

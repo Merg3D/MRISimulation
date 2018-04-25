@@ -28,7 +28,7 @@ struct Experiment
 
 	int max_iterations = 200;
 
-	int N_protons = 2e4;
+	int N_protons = 1e4;
 	int N_particles = 1e2;
 
 	double ors_frequency = 200.0;
