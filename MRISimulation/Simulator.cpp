@@ -32,7 +32,7 @@ Simulator::Simulator()
 
 	normal_dt = pow(particle_radius, 2) / (6 * D);	// s
 	dt = normal_dt;							// s
-	dt = 1e-8;								// s
+	//dt = 1e-10;								// s
 
 	exc_pulse_flipangle = 90.0;				// degrees
 	ors_pulse_flipangle = 90.0;				// degrees
@@ -40,12 +40,12 @@ Simulator::Simulator()
 	volume = vec3d(1.5e-5);					// m
 
 	B0 = 7.0;								// Tesla
-	B1 = 0.00;								// Tesla
+	B1 = 0.0;								// Tesla
 
 	ors_frequency = 0.0;
 	ors_bandwidth = 100.0;
 	gradient_duration = 20e-3;
-	exc_pulse_time = 199 * dt;
+	exc_pulse_time = 999 * dt;
 
 	N_threads = 4;
 
@@ -55,13 +55,13 @@ Simulator::Simulator()
 	int c = 0;
 
 	// set up experiments
-	for (double frequency = -500; frequency <= 600; frequency += 100.0)
+	for (double frequency = 600; frequency <= 600; frequency += 200.0)
 	{
-		for (double bandwidth = 100.0; bandwidth <= 1100.0; bandwidth += 200.0)
+		for (double bandwidth = 1100.0; bandwidth <= 1100.0; bandwidth += 200.0)
 		{
-			for (double Cc = 0.05; Cc <= 2.0; Cc += 0.05)
+			for (double Cc = 2.00; Cc <= 4.0; Cc += 0.01)
 			{
-				int max_particles = 100;
+				int max_particles = 1000;
 
 				double scale = max_particles / 6.38e12;
 				double V = 2.5 * scale / Cc;			// ml
@@ -73,6 +73,7 @@ Simulator::Simulator()
 				exp.volume = vec3d(std::pow(V, 1.0 / 3.0) * 1e-2); // m^3
 				exp.Cc = Cc;
 				exp.id = c;
+				exp.dt = dt;
 				experiments.push_back(exp);
 
 				c++;
@@ -121,8 +122,10 @@ void Simulator::start_experiment(Experiment& p_exp)
 		init();
 
 		apply_ors_pulse();
+		apply_exc_pulse();
+		p_exp.results.push_back(get_signal());
 
-		while (true)
+		/*while (true)
 		{
 			if (t >= exc_pulse_time && !has_applied_exc_pulse)
 			{
@@ -140,7 +143,7 @@ void Simulator::start_experiment(Experiment& p_exp)
 			iteration++;
 		}
 
-		p_exp.results.push_back(get_signal());
+		p_exp.results.push_back(get_signal());*/
 
 		std::cout << std::endl;
 	}
@@ -189,6 +192,8 @@ void Simulator::iterate()
 	for (int t = 0; t < N_threads; t++)
 		threads[t].join();
 
+	threads.clear();
+
 	for (int t = 0; t < N_threads; t++)
 	{
 		auto function = &Simulator::update_proton_magnetizations;
@@ -219,6 +224,7 @@ double Simulator::get_signal()
 	calculate_global_magnetization();
 	vec3d M = global_magnetization;
 	double signal = sqrt(M.x * M.x + M.y * M.y);
+	//signal = M.y;
 
 	signals.push_back(signal);
 	std::cout << "Iteration: " << iteration << ", time: " << t << ", signal = " << signal << ", z = " << get_z_magnetization() << "\r";
@@ -268,11 +274,7 @@ void Simulator::update_proton_positions(int start, int end)
 void Simulator::update_proton_magnetizations(int start, int end)
 {
 	for (int c = start; c < end; c++)
-	{
-		Proton& proton = protons[c];
-
-		update_proton_magnetization(proton);
-	}
+		update_proton_magnetization(protons[c]);
 }
 
 void Simulator::update_proton_position(Proton& p_proton)
@@ -285,19 +287,20 @@ void Simulator::update_proton_magnetization(Proton& p_proton)
 	vec3d& magn = p_proton.magnetization;
 
 	double Bt = B_tot(p_proton);
+	double omega = gamma * Bt;
 
-	double offset = gamma * Bt - gamma * B0; // relative larmor frequency
-	double theta = gamma * Bt * dt;
+	if (applying_gradient)
+		omega += gamma * B1;
 
-	//if (applying_gradient)
-	//	theta += offset * B1;
+	double offset = omega - gamma * B0; // relative larmor frequency
+	double theta = omega * dt;
 
 	double E1 = exp(-R1 * dt);
 	double E2 = exp(-R2 * dt);
 
-	magn.x = E2 * (magn.x * cos(theta) + magn.y * sin(theta));
+	magn.x = E2 * (magn.x * cos(theta) + magn.y * sin(theta)); // E2 * 
 	magn.y = E2 * (magn.x * sin(theta) - magn.y * cos(theta));
-	magn.z = E1 * magn.z + (1.0 - E1) * M0;
+	//magn.z = E1 * magn.z + (1.0 - E1) * M0;
 }
 
 void Simulator::apply_exc_pulse()

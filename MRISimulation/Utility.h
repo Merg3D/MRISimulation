@@ -5,7 +5,7 @@
 
 #include "Vec3.h"
 
-#define PI 3.14159265359f
+#define PI 3.14159265359
 #define DEG_RAD (PI / 180.0)
 
 class Utility

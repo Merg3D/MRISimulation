@@ -24,9 +24,9 @@ struct Proton : public Spatial
 
 struct Experiment
 {
-	double dt = 1e-8;
+	double dt;
 
-	int max_iterations = 200;
+	int max_iterations = 1e3;
 
 	int N_protons = 1e4;
 	int N_particles = 1e2;
@@ -40,7 +40,7 @@ struct Experiment
 
 	int id = -1;
 
-	int averages = 5;
+	int averages = 3;
 
 	std::vector<double> results;
 };
