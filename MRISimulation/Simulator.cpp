@@ -32,7 +32,7 @@ Simulator::Simulator()
 
 	normal_dt = pow(particle_radius, 2) / (6 * D);	// s
 	dt = normal_dt;							// s
-	//dt = 1e-10;								// s
+	dt = 5.55e-5;								// s
 
 	exc_pulse_flipangle = 90.0;				// degrees
 	ors_pulse_flipangle = 90.0;				// degrees
@@ -53,15 +53,16 @@ Simulator::Simulator()
 		gradient_duration = exc_pulse_time;
 
 	int c = 0;
+	float step = 0.1f;
 
 	// set up experiments
-	for (double frequency = 600; frequency <= 600; frequency += 200.0)
+	for (double frequency = 800; frequency <= 800; frequency += 200.0)
 	{
 		for (double bandwidth = 1100.0; bandwidth <= 1100.0; bandwidth += 200.0)
 		{
-			for (double Cc = 2.00; Cc <= 4.0; Cc += 0.01)
+			for (double Cc = step; Cc <= 2.0f; Cc += step)
 			{
-				int max_particles = 1000;
+				int max_particles = 100;
 
 				double scale = max_particles / 6.38e12;
 				double V = 2.5 * scale / Cc;			// ml
@@ -122,17 +123,9 @@ void Simulator::start_experiment(Experiment& p_exp)
 		init();
 
 		apply_ors_pulse();
-		apply_exc_pulse();
-		p_exp.results.push_back(get_signal());
 
-		/*while (true)
+		while (true)
 		{
-			if (t >= exc_pulse_time && !has_applied_exc_pulse)
-			{
-				apply_exc_pulse();
-				has_applied_exc_pulse = true;
-			}
-
 			if (iteration >= max_iterations)
 				break;
 
@@ -143,7 +136,10 @@ void Simulator::start_experiment(Experiment& p_exp)
 			iteration++;
 		}
 
-		p_exp.results.push_back(get_signal());*/
+		apply_exc_pulse();
+		p_exp.results.push_back(get_signal());
+
+		save();
 
 		std::cout << std::endl;
 	}
@@ -224,7 +220,6 @@ double Simulator::get_signal()
 	calculate_global_magnetization();
 	vec3d M = global_magnetization;
 	double signal = sqrt(M.x * M.x + M.y * M.y);
-	//signal = M.y;
 
 	signals.push_back(signal);
 	std::cout << "Iteration: " << iteration << ", time: " << t << ", signal = " << signal << ", z = " << get_z_magnetization() << "\r";
@@ -289,8 +284,8 @@ void Simulator::update_proton_magnetization(Proton& p_proton)
 	double Bt = B_tot(p_proton);
 	double omega = gamma * Bt;
 
-	if (applying_gradient)
-		omega += gamma * B1;
+	//if (applying_gradient)
+	//	omega += gamma * B1;
 
 	double offset = omega - gamma * B0; // relative larmor frequency
 	double theta = omega * dt;
@@ -298,9 +293,9 @@ void Simulator::update_proton_magnetization(Proton& p_proton)
 	double E1 = exp(-R1 * dt);
 	double E2 = exp(-R2 * dt);
 
-	magn.x = E2 * (magn.x * cos(theta) + magn.y * sin(theta)); // E2 * 
+	magn.x = E2 * (magn.x * cos(theta) + magn.y * sin(theta));
 	magn.y = E2 * (magn.x * sin(theta) - magn.y * cos(theta));
-	//magn.z = E1 * magn.z + (1.0 - E1) * M0;
+	magn.z = E1 * magn.z + (1.0 - E1) * M0;
 }
 
 void Simulator::apply_exc_pulse()
@@ -366,17 +361,36 @@ double Simulator::B_dip(const vec3d& p_r)
 void Simulator::save()
 {
 	std::ofstream file_off;
+	std::ofstream file_decay;
 	std::ofstream file_sig;
 	std::string exp = "0";
 
-	file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\decay.txt");
+	bool save_offsets = false;
+	bool save_decay = true;
 
-	for (int c = 0; c < signals.size(); c++)
+	if (save_offsets)
 	{
-		file_off << signals[c] << std::endl;
+		file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\offsets.txt");
+
+		for (int c = 0; c < offsets.size(); c++)
+		{
+			file_off << offsets[c] << std::endl;
+		}
+
+		file_off.close();
 	}
 
-	file_off.close();
+	if (save_decay)
+	{
+		file_decay.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\decay.txt");
+
+		for (int c = 0; c < signals.size(); c++)
+		{
+			file_decay << signals[c] << std::endl;
+		}
+
+		file_decay.close();
+	}
 
 	file_sig.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\data.txt");
 	file_sig << "dt, volume, N_protons, N_particles, ors_bandwidth, ors_frequency, Cc, values" << "\n";

@@ -22,11 +22,12 @@ struct Proton : public Spatial
 	vec3d magnetization;
 };
 
+// Experiment: class describing all parameters for the experiment + contains the results
 struct Experiment
 {
 	double dt;
 
-	int max_iterations = 1e3;
+	int max_iterations = 1000;
 
 	int N_protons = 1e4;
 	int N_particles = 1e2;
@@ -40,7 +41,7 @@ struct Experiment
 
 	int id = -1;
 
-	int averages = 3;
+	int averages = 4;
 
 	std::vector<double> results;
 };
@@ -63,7 +64,7 @@ private:
 	void init();
 	void iterate();
 
-	// not really necessary
+	// not really necessary, but helpful for debugging
 	double get_z_magnetization();
 
 	// calculate global magnetization
@@ -90,6 +91,7 @@ private:
 	// calculate dipole field for SPIO particle given distance to proton 
 	double B_dip(const vec3d& p_r);
 
+	// write results to text files
 	void save();
 	
 	std::vector<Proton> protons;
@@ -99,7 +101,6 @@ private:
 	std::vector<double> signals;
 	std::vector<double> offsets;
 
-	// experiments
 	std::vector<Experiment> experiments;
 	std::vector<std::thread> threads;
 
