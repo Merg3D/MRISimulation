@@ -41,7 +41,7 @@ struct Experiment
 
 	int id = -1;
 
-	int averages = 4;
+	int averages = 10;
 
 	std::vector<double> results;
 };

@@ -56,13 +56,13 @@ Simulator::Simulator()
 	float step = 0.1f;
 
 	// set up experiments
-	for (double frequency = 800; frequency <= 800; frequency += 200.0)
+	for (double frequency = 600; frequency <= 1100; frequency += 100.0)
 	{
 		for (double bandwidth = 1100.0; bandwidth <= 1100.0; bandwidth += 200.0)
 		{
 			for (double Cc = step; Cc <= 2.0f; Cc += step)
 			{
-				int max_particles = 100;
+				int max_particles = 500;
 
 				double scale = max_particles / 6.38e12;
 				double V = 2.5 * scale / Cc;			// ml
