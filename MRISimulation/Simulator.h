@@ -83,7 +83,7 @@ private:
 	
 	// apply excitation and off-resonance pulses along x-axis
 	void apply_exc_pulse();
-	void apply_ors_pulse();
+	void apply_ors_pulse(int p_axis);
 
 	// calculate total magnetic field
 	double B_tot(Proton& p_particle);
@@ -110,7 +110,6 @@ private:
 
 	double D;
 	double step_size;
-	double normal_dt;
 	double dt;
 
 	double R1, R2;
@@ -141,10 +140,16 @@ private:
 	double ors_frequency;		// Hz
 	double ors_bandwidth;		// Hz
 
-	double exc_pulse_time;
 	double gradient_duration;
 
 	bool has_applied_exc_pulse;
+
+
+	// times in terms of steps at which ors pulses are applied
+	std::vector<int> ors_pulse_times;
+
+	// rotation axes of the ors pulses
+	std::vector<int> ors_pulse_axes;
 
 	// proton gyromagnetic ratio
 	double gamma;

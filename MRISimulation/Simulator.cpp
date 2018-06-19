@@ -29,10 +29,7 @@ Simulator::Simulator()
 	particle_radius = 10e-9;				// m
 
 	gamma = 267.513e6;						// rad s^−1 T^−1)
-
-	normal_dt = pow(particle_radius, 2) / (6 * D);	// s
-	dt = normal_dt;							// s
-	dt = 5.55e-5;								// s
+	dt = 5.55e-5;							// s
 
 	exc_pulse_flipangle = 90.0;				// degrees
 	ors_pulse_flipangle = 90.0;				// degrees
@@ -42,18 +39,20 @@ Simulator::Simulator()
 	B0 = 7.0;								// Tesla
 	B1 = 0.0;								// Tesla
 
-	ors_frequency = 0.0;
-	ors_bandwidth = 100.0;
 	gradient_duration = 20e-3;
-	exc_pulse_time = 999 * dt;
 
 	N_threads = 4;
 
-	if (gradient_duration > exc_pulse_time)
-		gradient_duration = exc_pulse_time;
-
 	int c = 0;
 	float step = 0.1f;
+
+	ors_pulse_axes.push_back(0); // x
+	ors_pulse_axes.push_back(2); // z
+	ors_pulse_axes.push_back(0); // x
+
+	ors_pulse_times.push_back(0);
+	ors_pulse_times.push_back(10);
+	ors_pulse_times.push_back(20);
 
 	// set up experiments
 	for (double frequency = 600; frequency <= 1100; frequency += 100.0)
@@ -117,17 +116,21 @@ void Simulator::start_experiment(Experiment& p_exp)
 	dt = p_exp.dt;
 	max_iterations = p_exp.max_iterations;
 	volume = p_exp.volume;
-
+	
 	for (int a = 0; a < p_exp.averages; a++)
 	{
 		init();
-
-		apply_ors_pulse();
 
 		while (true)
 		{
 			if (iteration >= max_iterations)
 				break;
+
+			for (int p = 0; p < ors_pulse_times.size(); p++)
+			{
+				if (iteration == ors_pulse_times[p])
+					apply_ors_pulse(ors_pulse_axes[p]);
+			}
 
 			get_signal();
 			iterate();
@@ -312,10 +315,16 @@ void Simulator::apply_exc_pulse()
 	std::cout << "Finished exc pulse" << std::endl;
 }
 
-void Simulator::apply_ors_pulse()
+void Simulator::apply_ors_pulse(int p_axis)
 {
 	mat4 rot;
-	rot.rotate_x(ors_pulse_flipangle * DEG_RAD);
+
+	if (p_axis == 0)
+		rot.rotate_x(ors_pulse_flipangle * DEG_RAD);
+	else if (p_axis == 1)
+		rot.rotate_y(ors_pulse_flipangle * DEG_RAD);
+	else
+		rot.rotate_z(ors_pulse_flipangle * DEG_RAD);
 
 	std::cout << std::endl;
 	std::cout << "Applying ORS pulse" << "\r";
@@ -365,7 +374,7 @@ void Simulator::save()
 	std::ofstream file_sig;
 	std::string exp = "0";
 
-	bool save_offsets = false;
+	bool save_offsets = true;
 	bool save_decay = true;
 
 	if (save_offsets)
