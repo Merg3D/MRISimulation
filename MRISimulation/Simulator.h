@@ -14,7 +14,6 @@ struct Spatial
 
 struct Particle : public Spatial
 {
-
 };
 
 struct Proton : public Spatial
@@ -25,23 +24,18 @@ struct Proton : public Spatial
 // Experiment: class describing all parameters for the experiment + contains the results
 struct Experiment
 {
-	double dt;
-
 	int max_iterations = 1000;
-
 	int N_protons = 1e4;
 	int N_particles = 1e2;
+	int id = -1;
+	int averages = 10;
 
 	double ors_frequency = 200.0;
 	double ors_bandwidth = 100.0;
-
 	double Cc;
+	double dt;
 
 	vec3d volume = vec3d(1e-6); // m
-
-	int id = -1;
-
-	int averages = 10;
 
 	std::vector<double> results;
 };

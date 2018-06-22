@@ -44,22 +44,22 @@ Simulator::Simulator()
 	N_threads = 4;
 
 	int c = 0;
-	float step = 0.1f;
+	float step = 2.0f;
+	int N_pulses = 9;
 
-	ors_pulse_axes.push_back(0); // x
-	ors_pulse_axes.push_back(2); // z
-	ors_pulse_axes.push_back(0); // x
-
-	ors_pulse_times.push_back(0);
-	ors_pulse_times.push_back(10);
-	ors_pulse_times.push_back(20);
+	for (int i = 0; i <= 50 * (N_pulses - 1) * 2; i += 50)
+	{
+		ors_pulse_axes.push_back(0); // x
+		ors_pulse_axes.push_back(2); // z
+		ors_pulse_times.push_back(i);
+	}
 
 	// set up experiments
 	for (double frequency = 600; frequency <= 1100; frequency += 100.0)
 	{
 		for (double bandwidth = 1100.0; bandwidth <= 1100.0; bandwidth += 200.0)
 		{
-			for (double Cc = step; Cc <= 2.0f; Cc += step)
+			for (double Cc = step; Cc <= step; Cc += step)
 			{
 				int max_particles = 500;
 
@@ -374,7 +374,7 @@ void Simulator::save()
 	std::ofstream file_sig;
 	std::string exp = "0";
 
-	bool save_offsets = true;
+	bool save_offsets = false;
 	bool save_decay = true;
 
 	if (save_offsets)
