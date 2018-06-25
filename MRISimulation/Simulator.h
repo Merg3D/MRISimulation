@@ -14,7 +14,6 @@ struct Spatial
 
 struct Particle : public Spatial
 {
-
 };
 
 struct Proton : public Spatial
@@ -28,20 +27,18 @@ struct Experiment
 	double dt;
 
 	int max_iterations = 1000;
-
 	int N_protons = 1e4;
 	int N_particles = 1e2;
 
-	double ors_frequency = 200.0;
-	double ors_bandwidth = 100.0;
+	double ors_frequency;
+	double ors_bandwidth;
 
 	double Cc;
 
-	vec3d volume = vec3d(1e-6); // m
+	vec3d volume; // m
 
-	int id = -1;
-
-	int averages = 10;
+	int id;
+	int averages = 5;
 
 	std::vector<double> results;
 };

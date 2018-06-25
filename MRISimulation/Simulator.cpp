@@ -24,14 +24,11 @@ Simulator::Simulator()
 	double mu_0 = 4e-7 * PI;
 	B_eq = 0.72 * 5185 * mu_0 / 3.0 * Ms;	// Tesla (0.156)
 
-	T = 310.0;								// K
-
-	particle_radius = 10e-9;				// m
+	particle_radius = 6.08e-9;				// m8
 
 	gamma = 267.513e6;						// rad s^−1 T^−1)
 
 	normal_dt = pow(particle_radius, 2) / (6 * D);	// s
-	dt = normal_dt;							// s
 	dt = 5.55e-5;								// s
 
 	exc_pulse_flipangle = 90.0;				// degrees
@@ -45,7 +42,7 @@ Simulator::Simulator()
 	ors_frequency = 0.0;
 	ors_bandwidth = 100.0;
 	gradient_duration = 20e-3;
-	exc_pulse_time = 999 * dt;
+	exc_pulse_time = 9999 * dt;
 
 	N_threads = 4;
 
@@ -56,7 +53,7 @@ Simulator::Simulator()
 	float step = 0.1f;
 
 	// set up experiments
-	for (double frequency = 600; frequency <= 1100; frequency += 100.0)
+	for (double frequency = 600; frequency <= 600; frequency += 100.0)
 	{
 		for (double bandwidth = 1100.0; bandwidth <= 1100.0; bandwidth += 200.0)
 		{
@@ -124,7 +121,7 @@ void Simulator::start_experiment(Experiment& p_exp)
 
 		apply_ors_pulse();
 
-		while (true)
+		/*while (true)
 		{
 			if (iteration >= max_iterations)
 				break;
@@ -134,7 +131,7 @@ void Simulator::start_experiment(Experiment& p_exp)
 
 			t += dt;
 			iteration++;
-		}
+		}*/
 
 		apply_exc_pulse();
 		p_exp.results.push_back(get_signal());
