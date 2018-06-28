@@ -11,8 +11,8 @@
 class Utility
 {
 public:
-	Utility();
-	~Utility();
+	Utility() { }
+	~Utility() { }
 };
 
 class Random

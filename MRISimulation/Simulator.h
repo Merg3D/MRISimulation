@@ -38,7 +38,7 @@ struct Experiment
 	vec3d volume; // m
 
 	int id;
-	int averages = 5;
+	int averages = 10;
 
 	std::vector<double> results;
 };

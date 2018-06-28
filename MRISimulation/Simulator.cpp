@@ -55,7 +55,7 @@ Simulator::Simulator()
 	// set up experiments
 	for (double frequency = 600; frequency <= 600; frequency += 100.0)
 	{
-		for (double bandwidth = 1100.0; bandwidth <= 1100.0; bandwidth += 200.0)
+		for (double bandwidth = 600.0; bandwidth <= 1100.0; bandwidth += 100.0)
 		{
 			for (double Cc = step; Cc <= 2.0f; Cc += step)
 			{
