@@ -26,7 +26,7 @@ Simulator::Simulator()
 
 	T = 310.0;								// K
 
-	particle_radius = 10e-9;				// m
+	particle_radius = 6.08e-9;				// m
 
 	gamma = 267.513e6;						// rad s^−1 T^−1)
 	dt = 5.55e-5;							// s
@@ -45,9 +45,9 @@ Simulator::Simulator()
 
 	int c = 0;
 	float step = 2.0f;
-	int N_pulses = 9;
+	int N_pulses = 4;
 
-	for (int i = 0; i <= 50 * (N_pulses - 1) * 2; i += 50)
+	for (int i = 0; i <= 100 * (N_pulses - 1) * 2; i += 100)
 	{
 		ors_pulse_axes.push_back(0); // x
 		ors_pulse_axes.push_back(2); // z
@@ -55,7 +55,7 @@ Simulator::Simulator()
 	}
 
 	// set up experiments
-	for (double frequency = 600; frequency <= 1100; frequency += 100.0)
+	for (double frequency = 600; frequency <= 600; frequency += 100.0)
 	{
 		for (double bandwidth = 1100.0; bandwidth <= 1100.0; bandwidth += 200.0)
 		{
@@ -382,9 +382,7 @@ void Simulator::save()
 		file_off.open("H:\\MyDocs\\BachelorProject\\Simulations\\data\\offsets.txt");
 
 		for (int c = 0; c < offsets.size(); c++)
-		{
 			file_off << offsets[c] << std::endl;
-		}
 
 		file_off.close();
 	}

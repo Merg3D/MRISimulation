@@ -28,7 +28,7 @@ struct Experiment
 	int N_protons = 1e4;
 	int N_particles = 1e2;
 	int id = -1;
-	int averages = 10;
+	int averages = 1;
 
 	double ors_frequency = 200.0;
 	double ors_bandwidth = 100.0;

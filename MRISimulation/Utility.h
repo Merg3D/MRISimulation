@@ -39,4 +39,3 @@ public:
 		return vec3d(x, y, z);
 	}
 };
-
