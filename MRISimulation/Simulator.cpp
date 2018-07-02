@@ -44,14 +44,13 @@ Simulator::Simulator()
 	N_threads = 4;
 
 	int c = 0;
-	float step = 2.0f;
+	double step = 2.0;
 	int N_pulses = 4;
 
-	for (int i = 0; i <= 100 * (N_pulses - 1) * 2; i += 100)
+	for (int i = 0; i < N_pulses; i++)
 	{
 		ors_pulse_axes.push_back(0); // x
-		ors_pulse_axes.push_back(2); // z
-		ors_pulse_times.push_back(i);
+		ors_pulse_times.push_back(i * 1000 / 5);
 	}
 
 	// set up experiments
@@ -74,6 +73,7 @@ Simulator::Simulator()
 				exp.Cc = Cc;
 				exp.id = c;
 				exp.dt = dt;
+
 				experiments.push_back(exp);
 
 				c++;
